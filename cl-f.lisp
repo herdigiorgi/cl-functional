@@ -10,7 +10,8 @@
    :<<
    :>>
    :memoize
-   :lazy-memoize))
+   :lazy-memoize
+   :comp-case))
 
 (in-package :cl-f-style)
 
@@ -29,6 +30,7 @@
 	       (cons (make-funcall (car functions))
 		     (insert-funcalls (cdr functions))))))
     `(progn ,@(insert-funcalls body))))
+
 
 (defmacro ifte (predicate &body body)
   "Enables the common control flow IF with :THEN and :ELSE found in other 
@@ -128,3 +130,15 @@
   "Creates a lazy computation that also memoizes de result."
   `(memoize (lazy ,@body)))
 
+(defmacro comp-case (exp-to-compare exp-comp-func &body body)
+  "Makes a case comparison with a custom function. The syntax is the same as
+   the standar case but the second argument is a function. "
+  (let ((to-compare (gensym "to-compare"))
+	(comp-func (gensym "comp-func")))
+    `(let ((,to-compare ,exp-to-compare)
+	   (,comp-func ,exp-comp-func))
+       (cond ,@ (mapcar (lambda (pair) (list
+				   `(funcall ,comp-func ,(first pair)
+				     ,to-compare)
+				   (second pair)))
+			body)))))
