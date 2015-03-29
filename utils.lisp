@@ -1,4 +1,4 @@
-(defpackage :cl-f-style
+(defpackage :cl-functional.utils
   (:use :common-lisp)
   (:export
    :ifte
