@@ -6,11 +6,10 @@
    :force
    :/>
    :</
-   :ignore
+   :retnil
    :<<
    :>>
    :memoize
-   :lazy-memoize
    :comp-case))
 
 (in-package :cl-functional.utils)
@@ -143,7 +142,7 @@
   (let ((rbody (reverse body)))
     `(private_/> :</ ,@rbody)))
 
-(defmacro ret-nil (&body body)
+(defmacro retnil (&body body)
   "Evaluates the body and always return nil"
   `(progn ,@body nil))
 
@@ -179,9 +178,6 @@
 	    value
 	    (setf (gethash args hash-table) (apply function args)))))))
 
-(defmacro lazy-memoize (&body body)
-  "Creates a lazy computation that also memoizes de result."
-  `(memoize (lazy ,@body)))
 
 (defmacro comp-case (exp-to-compare exp-comp-func &body body)
   "Makes a case comparison with a custom function. The syntax is the same as
