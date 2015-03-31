@@ -13,23 +13,76 @@
    :lazy-memoize
    :comp-case))
 
-(in-package :cl-f-style)
+(in-package :cl-functional.utils)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LAZY COMPUTATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defclass <lazy-computation> ()
+  ((computation :initarg :computation
+                :accessor lazy-computation
+                :documentation "Computation is a function that takes no
+                                arguments. And when its is called the first
+                                time, it is where the result is stored. If
+                                computation stores the result, calculatedp is
+                                t.")
+   (calculatedp :initform nil :accessor lazy-calculatedp
+                :type (BOOLEAN)
+                :documentation "Holds if the computation was done or not.")))
+
+(defun lazy-make (func)
+  (unless (functionp func)
+    (error "A lazy computation needs a function without arguments
+            for its creation."))
+  (make-instance '<lazy-computation> :computation func))
+
+(defmethod lazy-force ((lazy <lazy-computation>))
+  (with-accessors ((computation lazy-computation)
+                   (calculatedp lazy-calculatedp)) lazy
+    (unless calculatedp
+      (setf computation (let ((f computation)) (funcall f)))
+      (setf calculatedp t))
+    computation))
 
 (defmacro lazy (&body body)
-  "Creates a delayed computation, that can be executed with FORCE. Se also
-   LAZY-MEMOIZE."
-  `(lambda () ,@body))
+  "Creates a delayed computation, that can be executed with FORCE."
+  `(lazy-make (lambda () ,@body)))
 
-(defmacro force (&body body)
-  "Forces the execution of all the lazy functions in the BODY of this MACRO.
-   You can call (force my-lazy) or with multiple lazies (force lazy1 lazy2) and
-   the execution will be done in order."
-  (labels ((make-funcall (f) `(funcall ,f))
-	   (insert-funcalls (functions)
-	     (when functions
-	       (cons (make-funcall (car functions))
-		     (insert-funcalls (cdr functions))))))
-    `(progn ,@(insert-funcalls body))))
+(defmacro with-lazy ((&rest paired-lazy-defs) &body body)
+  "Witch lazy is like a let of lazies. The first argument is a list of pairs
+   of lazy definitions of the form (var-name body-to-eval+). Later in the BODY.
+   Any ocurrence of var-name is replaced with a functional call to lazy-force
+   on that lazy computation. An example
+
+   (with-lazy ((a (print 'COMPUTE-SOMETHING-A) 'A)
+               (b (print 'b1 'b2) 'b))
+     (list a b b))
+
+   Is is also posible to use (with-lazy (a b c) ... ) where a b and c are
+   already created lazy computations."
+  (let ((letvars (list))
+        (macrolets (list)))
+    (loop for lazy-def in paired-lazy-defs
+       with lazy-name
+       with lazy-body
+       with gensym-lazy-name
+       with existing-lazy ; No need to generate a new lazy computation
+       do
+         (setf existing-lazy (not (and (listp lazy-def) (rest lazy-def))))
+         
+         (setf lazy-name (if existing-lazy lazy-def (first lazy-def)))
+         (setf lazy-body (if existing-lazy nil (rest lazy-def)))
+         (setf gensym-lazy-name  (gensym (string lazy-name)))
+         
+         (setf letvars
+               (if existing-lazy
+                   (cons `(,gensym-lazy-name ,lazy-name) letvars)
+                   (cons `(,gensym-lazy-name (lazy ,@lazy-body)) letvars)))
+         (setf macrolets
+               (cons `(,lazy-name (lazy-force ,gensym-lazy-name))
+                     macrolets)))
+    `(let ,(nreverse letvars)
+       (symbol-macrolet ,(nreverse macrolets) ,@body))))
 
 
 (defmacro ifte (predicate &body body)
@@ -83,14 +136,14 @@
    => (* 99 (+ 2 (* 3 1))). The position of the substitution can be changed
    using the symbol :/>, for example (/> (a) (b c :/> d) (j) is translated to
    (j (b c (a) d))."
-  `(cl-f-style::private_/> :/> ,@body))
+  `(private_/> :/> ,@body))
 
 (defmacro </ (&body body)
   "The same as /> but uses the :</ symbol and the body is reversed."
   (let ((rbody (reverse body)))
-    `(cl-f-style::private_/> :</ ,@rbody)))
+    `(private_/> :</ ,@rbody)))
 
-(defmacro ignore (&body body)
+(defmacro ret-nil (&body body)
   "Evaluates the body and always return nil"
   `(progn ,@body nil))
 
@@ -104,12 +157,12 @@
 (defmacro >> (&body body)
   "Foward function composition. (>> (f) (g) (h)) is tranlated to
    (lambda (x) (h (g (f x))))"
-  `(cl-f-style::private_>> :>> ,@body))
+  `(private_>> :>> ,@body))
 
 (defmacro << (&body body)
   "Backward function composition. (<< (f) (g) (h)) is translated to
    (lambda (x) (f (g (h x))))"
-  `(cl-f-style::private_>> :>> ,@(nreverse body)))
+  `(private_>> :>> ,@(nreverse body)))
 
 (defmacro while (predicate &body body)
   "A simple while found an any C like language."
