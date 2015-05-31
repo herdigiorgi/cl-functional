@@ -113,13 +113,13 @@
    NEW-ELEMENT is inserted at the end."
   (labels
       ((replace-at (list pushback)
-	 (let ((car (lazy (car list)))
-	       (cdr (lazy (cdr list))))
+	 (with-lazy ((car (car list))
+                     (cdr (cdr list)))
 	   (cond
 	     ((equalp list nil) (if pushback (cons new-element nil) nil))
-	     ((funcall test (force car) old-element)
-	      (cons new-element (replace-at (force cdr) nil)))
-	     (t (cons (car list) (replace-at (force cdr) pushback)))))))
+	     ((funcall test car old-element)
+	      (cons new-element (replace-at cdr nil)))
+	     (t (cons (car list) (replace-at cdr pushback)))))))
     (replace-at list t)))
 
 (defmacro private_/> (symbol &body body)
