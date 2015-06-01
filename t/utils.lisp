@@ -3,24 +3,23 @@
   (:use
    :cl
    :cl-functional.utils
-   :lisp-unit2)
+   :prove)
   (:export :run-test))
 (in-package :cl-functional-test.utils)
 
-(defun run-test ()
-  (let (*debugger-hook*)
-    (print-summary (run-tests :package :cl-functional-test.utils))))
+(plan nil)
 
-(define-test test-foward-chain ()
-  (assert-eql (/> :FOO) :FOO)
-  (assert-eql (/> 1 (- 2)) 1)
-  (assert-eql (/> 1 1+) 2)
-  (assert-true (equalp (macroexpand '(/> :D :C :B :A)) '(:A (:B (:C :D)))))
-  (assert-true (equalp (macroexpand '(/> :A (FUN :/> J B) CONS))
-                       '(CONS (FUN :A J B)))))
+(subtest "Testing forward chain />"
+  (is (/> :FOO) :FOO)
+  (is (/> 1 (- 2)) 1)
+  (is (/> 1 1+) 2)
+  (is (/> 1 (list :/> 20)) '(1 20) :test #'equalp))
 
+(subtest "Testing backward chain </" 
+  (is (</ :FOO) :FOO)
+  (is (</ (- 2) 1) 1))
 
-
+(finalize)
 
 
 
