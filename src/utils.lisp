@@ -29,6 +29,8 @@
                 :type (BOOLEAN)
                 :documentation "Holds if the computation was done or not.")))
 
+(defgeneric lazy-force (<lazy-computation>))
+
 (defun lazy-make (func)
   (unless (functionp func)
     (error "A lazy computation needs a function without arguments
@@ -125,8 +127,9 @@
 (defmacro private_/> (symbol &body body)
   (let ((result (car body)))
     (loop :for i :in (cdr body)
-	  :do (setf result
-		    (replace-at-or-push-back i symbol result)))
+       :for list-item := (if (listp i) i (list i))
+       :do (setf result
+                 (replace-at-or-push-back list-item symbol result)))
     result))
 
 (defmacro /> (&body body)

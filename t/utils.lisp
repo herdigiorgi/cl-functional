@@ -15,7 +15,9 @@
   (assert-eql (/> :FOO) :FOO)
   (assert-eql (/> 1 (- 2)) 1)
   (assert-eql (/> 1 1+) 2)
-  (assert-true (equalp (macroexpand '(/> :D :C :B :A)) '(:A (:B (:C :D))))))
+  (assert-true (equalp (macroexpand '(/> :D :C :B :A)) '(:A (:B (:C :D)))))
+  (assert-true (equalp (macroexpand '(/> :A (FUN :/> J B) CONS))
+                       '(CONS (FUN :A J B)))))
 
 
 
