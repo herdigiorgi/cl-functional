@@ -27,12 +27,12 @@
      finally (return result)))
 
 (defun mk#! (table &rest args)
-  (loop-partioning (key value) args
+  (loop-partition (key value) args
      (setf (gethash key table) value))
   table)
 
 (defun mk# (&rest args)
   (let ((table (make-hash-table :test 'equalp)))
-    (loop-partioning (key data) args
+    (loop-partition (key data) args
        (setf (gethash key table) data))
     table))

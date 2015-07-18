@@ -16,7 +16,7 @@
    :|#_|
    :memoize
    :comp-case
-   :loop-partioning
+   :loop-partition
    :let-when))
 
 (in-package :cl-functional.utils)
@@ -197,7 +197,7 @@ for example #_1 is #|1|# or #_(+ 1 2 3) is #|(+ 1 2 3)|#"
 				   (second pair)))
 			body)))))
 
-(defmacro loop-partioning ((&rest args) in-list &rest do-body)
+(defmacro loop-partition ((&rest args) in-list &body do-body)
   "The same as (loop for (args) on in-list by the-size-args-cdrs do do-body)"
   (let* ((iterator (gensym "ITERATOR_"))
          (aux      (gensym "AUX_"))
