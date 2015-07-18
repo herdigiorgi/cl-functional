@@ -8,7 +8,6 @@
    :lazy-force
    :lazy-make
    :lazyp
-   :force
    :/>
    :</
    :<//
