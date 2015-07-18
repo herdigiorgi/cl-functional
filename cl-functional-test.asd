@@ -3,10 +3,11 @@
 (in-package :cl-functional-test-asd)
 
 (defsystem cl-functional-test
-  :depends-on (:cl-functional :prove)
-  :defsystem-depends-on (:prove-asdf)
+  :depends-on (:cl-functional :lisp-unit)
   :components ((:module "t"
                         :components
-                        ((:test-file "utils"))))
-  :perform (test-op :after (op c)
-                    (funcall (intern #.(string :run) :prove) c)))
+                        ((:file "cl-functional")
+                         (:file "utils")
+                         (:file "data-structures"))))
+  :perform (test-op (op c)
+                    (eval (read-from-string "(cl-functional-test:test-all)"))))

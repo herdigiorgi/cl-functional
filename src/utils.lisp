@@ -2,21 +2,21 @@
   (:use :common-lisp)
   (:export
    :ifte
+   :if-not
    :lazy
    :force
    :/>
    :</
-   :retnil
-   :<<
-   :>>
+   :<//
+   ://>
+   :|#_|
    :memoize
-   :comp-case))
+   :comp-case
+   :loop-partioning
+   :let-when))
 
 (in-package :cl-functional.utils)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LAZY COMPUTATIONS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defclass <lazy-computation> ()
   ((computation :initarg :computation
                 :accessor lazy-computation
@@ -85,7 +85,6 @@
     `(let ,(nreverse letvars)
        (symbol-macrolet ,(nreverse macrolets) ,@body))))
 
-
 (defmacro ifte (predicate &body body)
   "Enables the common control flow IF with :THEN and :ELSE found in other 
    languages. An example: (ifte (null arg) :then (create) (fill) :else
@@ -108,6 +107,9 @@
 	 (progn ,@true-part)
 	 (progn ,@false-part))))
 
+(defmacro if-not (condition true-body false-body)
+  `(if (not ,condition) ,true-body ,false-body))
+
 (defun replace-at-or-push-back (list old-element new-element
 				&key (test #'equalp))
   "Creates a new list from LIST, replacing any OLD-ELEMENT by NEW-ELEMENT.
@@ -124,7 +126,7 @@
 	     (t (cons (car list) (replace-at cdr pushback)))))))
     (replace-at list t)))
 
-(defmacro private_/> (symbol &body body)
+(defun %_/> (symbol body)
   (let ((result (car body)))
     (loop :for i :in (cdr body)
        :for list-item := (if (listp i) i (list i))
@@ -138,38 +140,32 @@
    => (* 99 (+ 2 (* 3 1))). The position of the substitution can be changed
    using the symbol :/>, for example (/> (a) (b c :/> d) (j) is translated to
    (j (b c (a) d))."
-  `(private_/> :/> ,@body))
+  (%_/> :/> body))
 
 (defmacro </ (&body body)
   "The same as /> but uses the :</ symbol and the body is reversed."
-  (let ((rbody (reverse body)))
-    `(private_/> :</ ,@rbody)))
+  (%_/> :</ (reverse body)))
 
-(defmacro retnil (&body body)
-  "Evaluates the body and always return nil"
-  `(progn ,@body nil))
+(defmacro //> (&body body)
+  "Like /> but also creates a lambda function with one argument that is the first
+element of />"
+  (let ((arg (gensym "ARG")))
+    `(lambda (,arg) ,(%_/> ://> (cons arg body)))))
 
-(defmacro private_>> (symbol &body body)
-  (let* ((arg (gensym))
-	 (fbody (replace-at-or-push-back (car body) symbol arg)))
-    (loop :for i :in (cdr body)
-	  :do (setf fbody (replace-at-or-push-back i symbol fbody)))
-    `(lambda (,arg) ,fbody)))
-
-(defmacro >> (&body body)
-  "Foward function composition. (>> (f) (g) (h)) is tranlated to
-   (lambda (x) (h (g (f x))))"
-  `(private_>> :>> ,@body))
-
-(defmacro << (&body body)
+(defmacro <// (&body body)
   "Backward function composition. (<< (f) (g) (h)) is translated to
    (lambda (x) (f (g (h x))))"
-  `(private_>> :>> ,@(nreverse body)))
+  (let ((arg (gensym "ARG")))
+    `(lambda (,arg) ,(%_/> :<// (cons arg (reverse body))))))
 
-(defmacro while (predicate &body body)
-  "A simple while found an any C like language."
-  `(loop :while ,predicate :do ,@body))
+(defun |#_-reader| (stream subchar arg)
+  "Is like the comment ; reader macro but that is aplied to an expresion
+for example #_1 is #|1|# or #_(+ 1 2 3) is #|(+ 1 2 3)|#"
+  (declare (ignore subchar arg))
+  (read stream t nil t)
+  (values))
 
+(set-dispatch-macro-character #\# #\_ #'|#_-reader|)
 
 (defun memoize (function)
   "Returns a morization function vection of the argument FUNCTION."
@@ -180,7 +176,6 @@
 	(if foundp
 	    value
 	    (setf (gethash args hash-table) (apply function args)))))))
-
 
 (defmacro comp-case (exp-to-compare exp-comp-func &body body)
   "Makes a case comparison with a custom function. The syntax is the same as
@@ -194,3 +189,27 @@
 				     ,to-compare)
 				   (second pair)))
 			body)))))
+
+(defmacro loop-partioning ((&rest args) in-list &rest do-body)
+  "The same as (loop for (args) on in-list by the-size-args-cdrs do do-body)"
+  (let* ((iterator (gensym "ITERATOR_"))
+         (aux      (gensym "AUX_"))
+         (result   (gensym "RESULT_"))
+         (iteration-part
+          (loop for arg in args collecting
+               `(setf ,arg (let ((,aux (and ,iterator (car ,iterator))))
+                             (setf ,iterator (and ,iterator (cdr ,iterator)))
+                             ,aux)))))
+    `(let (,@args (,iterator ,in-list) ,result)
+       (do ()((not ,iterator) ,result)
+         ,@iteration-part
+         (setf ,result (progn ,@do-body))))))
+
+(defmacro let-when ((&rest bindings) &body in-body)
+  "Creates let bindings, but if one of the bindings is nil, the body is not
+executed and returns nil"
+  (loop for let-binding in (reverse bindings)
+     for let-name = (if (listp let-binding) (car let-binding) let-binding)
+     for result = `(let (,let-binding) (when ,let-name ,@in-body)) then
+       `(let (,let-binding) (when ,let-name ,result))
+     finally (return result)))

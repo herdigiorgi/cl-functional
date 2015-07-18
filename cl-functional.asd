@@ -13,6 +13,7 @@
                         :components
                         ((:file "utils")
                          (:file "tco")
+                         (:file "data-structures")
                          (:file "cl-functional"))))
   :in-order-to ((test-op (test-op cl-functional-test))))
 
