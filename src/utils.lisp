@@ -4,6 +4,10 @@
    :ifte
    :if-not
    :lazy
+   :with-lazy
+   :lazy-force
+   :lazy-make
+   :lazyp
    :force
    :/>
    :</
@@ -30,6 +34,9 @@
                 :documentation "Holds if the computation was done or not.")))
 
 (defgeneric lazy-force (<lazy-computation>))
+
+(defun lazyp (object)
+  (typep object '<lazy-computation>))
 
 (defun lazy-make (func)
   (unless (functionp func)

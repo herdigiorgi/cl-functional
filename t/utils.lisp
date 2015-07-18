@@ -1,5 +1,26 @@
 (in-package :cl-functional-test)
 
+(define-test test-lazy
+  (assert-true (lazyp (lazy (error "Error"))))
+  (assert-true (lazyp (lazy-make (lambda () (error "Error")))))
+  (let (x y z)
+    (with-lazy ((setx (setf x 0)) (sety (setf y 0)) (setz (setf z 0))
+                (incy (incf y)) (incz (incf z)) (incz2 (incf z)))
+      (assert-equalp 0 setx)
+      (assert-equalp nil y)
+      (assert-equalp 0 sety)
+      (assert-equalp 0 y)
+      (assert-equalp 1 incy)
+      (assert-equalp 1 y)
+      (assert-equalp nil z)
+      (assert-equalp z setz)
+      (assert-equalp 0 setz)
+      (assert-equalp 1 incz)
+      (assert-equalp 1 z)
+      (assert-equalp 2 incz2)
+      (assert-equalp 2 z)
+      (assert-equalp 1 incz))))
+
 (define-test testing-foward-chain-/> 
   (assert-equalp :FOO (/> :FOO))
   (assert-equalp :FOO (funcall (//> identity) :FOO))
