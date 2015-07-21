@@ -113,8 +113,11 @@
 	 (progn ,@true-part)
 	 (progn ,@false-part))))
 
-(defmacro if-not (condition true-body false-body)
-  `(if (not ,condition) ,true-body ,false-body))
+(defmacro if-not (condition &body body)
+  (cond
+    ((< (length body) 1) (error "IF-NOT need at least a not-true body"))
+    ((> (length body) 2) (error "IF-NOT need at maximum 2 parts"))
+    (:else `(if (not ,condition) ,(car body) ,(cadr body)))))
 
 (defun replace-at-or-push-back (list old-element new-element
 				&key (test #'equalp))
