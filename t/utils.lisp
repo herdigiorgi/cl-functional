@@ -80,6 +80,8 @@
   (assert-eql nil (let-when ((x nil)) t))
   (assert-eql nil (let-when ((x)) t)))
 
-
+(define-test test-bool
+    (assert-eql t (bool 1))
+    (assert-eql nil (bool nil)))
 
 

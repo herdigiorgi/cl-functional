@@ -16,7 +16,8 @@
    :memoize
    :comp-case
    :loop-partition
-   :let-when))
+   :let-when
+   :bool))
 
 (in-package :cl-functional.utils)
 
@@ -222,3 +223,6 @@ executed and returns nil"
      for result = `(let (,let-binding) (when ,let-name ,@in-body)) then
        `(let (,let-binding) (when ,let-name ,result))
      finally (return result)))
+
+(defun bool (x)
+  (if x t nil))
