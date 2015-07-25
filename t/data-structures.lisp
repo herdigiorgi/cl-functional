@@ -14,3 +14,7 @@
   (assert-eql
    6
    (/> (mk# 'a 1 'b 2 'c 3) hash-table->list length)))
+
+(define-test gethash-test
+  (assert-expands (gethash :key hash) (g# :key hash))
+  (assert-expands (gethash :key hash default) (g# :key hash default)))

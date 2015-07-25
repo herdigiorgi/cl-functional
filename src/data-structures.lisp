@@ -3,6 +3,7 @@
         :cl-functional.utils)
   (:export :mk#
            :mk#!
+           :g#
            :hash-table-equal?
            :hash-table->list
            :hash-table-map))
@@ -36,3 +37,8 @@
     (loop-partition (key data) args
        (setf (gethash key table) data))
     table))
+
+(defmacro g# (key-value hash-table &optional default-value)
+  (if default-value
+      `(gethash ,key-value ,hash-table ,default-value)
+      `(gethash ,key-value ,hash-table)))
