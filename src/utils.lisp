@@ -17,7 +17,8 @@
    :comp-case
    :loop-partition
    :let-when
-   :bool))
+   :bool
+   :cartesian-product))
 
 (in-package :cl-functional.utils)
 
@@ -226,3 +227,8 @@ executed and returns nil"
 
 (defun bool (x)
   (if x t nil))
+
+(defun cartesian-product (list-1 list-2)
+  (loop for i in list-1 nconcing
+       (loop for j in list-2 collecting
+            (list i j))))

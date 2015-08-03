@@ -84,4 +84,6 @@
     (assert-eql t (bool 1))
     (assert-eql nil (bool nil)))
 
-
+(define-test test-cartesian-product
+    (assert-equalp '((:A :C) (:A :D) (:B :C) (:B :D))
+                   (cartesian-product '(:A :B) '(:C :D))))
