@@ -39,3 +39,27 @@ recusive tail call to a iterative loop.
                                                (rest remainding))))))
         (funcall fcall 0 args)))
 ```
+### packages.lisp
+Sometimes is very hard to write the full name of a package, for example:
+
+```lisp
+(hunchentoot:define-easy-handler x ()
+    (setf hunchentoot:request* ..))
+```
+
+After some writing you get a lot of package noise, for that reason here you have
+a nice macro called ``define-nicknames``, that adds nicknames to a package:
+
+```lisp
+(define-nicknames
+    (:hunchentoot :ht)
+    (:other-package :op))
+```
+
+With that you can use ``ht:`` and ``op:`` like the original package. For example:
+
+```lisp
+(ht:define-easy-handler x ()
+    (setf ht:request ..))
+```
+

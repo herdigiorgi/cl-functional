@@ -11,7 +11,8 @@
   :license "Simplified BSD License"
   :components ((:module "src"
                         :components
-                        ((:file "utils")
+                        ((:file "packages")
+                         (:file "utils")
                          (:file "tco")
                          (:file "data-structures")
                          (:file "cl-functional"))))
