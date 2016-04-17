@@ -8,6 +8,7 @@
    :lazy-force
    :lazy-make
    :lazyp
+   :one-time-function
    :/>
    :</
    :<//
@@ -92,6 +93,17 @@
                      macrolets)))
     `(let ,(nreverse letvars)
        (symbol-macrolet ,(nreverse macrolets) ,@body))))
+
+(defmacro one-time-function (function-name &body body)
+  "Creates a function that will be executed only one time, the next time you
+   will get a cached result"
+  (let* ((variable-name (gensym "VARIABLE_NAME_"))
+         (doc-string (and (typep (car body) 'STRING) (cdr body) (car body)))
+         (body (if doc-string (cdr body) body)))
+    `(with-lazy ((,variable-name ,@body))
+       (defun ,function-name ()
+         ,doc-string
+         ,variable-name))))
 
 (defmacro ifte (predicate &body body)
   "Enables the common control flow IF with :THEN and :ELSE found in other 
